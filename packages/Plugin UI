@@ -1,0 +1,96 @@
+// WARNING: Only types may be imported here.
+import type { PluginLayer } from "client/src/layers/Plugins/createPluginLayer";
+
+/**
+ * Plugins must define a function named `createPlugin` that takes `PluginLayer`
+ * and returns an object with `mount` and `unmount` methods.
+ */
+function createPlugin(pluginLayer: PluginLayer) {
+  const {
+    ui: {
+      preact: { html, render, h, hooks },
+      components: { Button, Select, TextInput },
+    },
+  } = pluginLayer;
+
+  function Spacer() {
+    return html`<div style=${{ height: "8px" }}></div>`;
+  }
+
+  return {
+    // Called when the plugin is first loaded.
+    mount: (container: HTMLDivElement) => {
+      function App() {
+        const [countdown, setCountdown] = hooks.useState(120); // 2 minutes in seconds
+        const [selectedPlayer, setSelectedPlayer] = hooks.useState("");
+        
+        // Countdown function
+        hooks.useEffect(() => {
+          const interval = setInterval(() => {
+            setCountdown((prevCountdown) => prevCountdown - 1);
+          }, 1000);
+
+          // Cleanup
+          return () => clearInterval(interval);
+        }, []);
+
+        // Execute vote function
+        const executeVote = () => {
+          if (selectedPlayer !== "") {
+            // Perform vote action here
+            console.log(`Vote executed for: ${selectedPlayer}`);
+          } else {
+            alert("Please select a player before voting!");
+          }
+        };
+
+        return html`<div style=${{ maxWidth: "320px", display: "flex", flexDirection: "column" }}>
+          <h2>Voting time will end in ${Math.floor(countdown / 60)}:${countdown % 60 < 10 ? '0' : ''}${countdown % 60}</h2>
+          
+          <${Spacer} />
+
+          <${Select}
+            ...${{
+              label: "Select Player",
+              options: [
+                { value: "", label: "Select Player" },
+                { value: "Player X", label: "Player X" },
+                { value: "Player Y", label: "Player Y" },
+                { value: "Player Z", label: "Player Z" },
+              ],
+              value: selectedPlayer,
+              onChange: (value: string) => setSelectedPlayer(value),
+              style: { width: "100%" },
+              containerStyle: { width: "100%" },
+            }}
+          />
+          
+          <${Spacer} />
+          
+          <${Button}
+            ...${{
+              buttonType: "primary",
+              label: "Execute",
+              style: { width: "100%" },
+              onClick: executeVote,
+            }}
+          />
+          
+          <${Spacer} />
+          
+          <div style=${{ border: "1px solid red", padding: "8px", borderRadius: "4px", fontWeight: "bold", overflow: "auto", maxHeight: "150px" }}>
+            <p style=${{ margin: "0", color: "red", wordWrap: "break-word" }}>Vote Now!</p>
+          </div>
+        </div>`;
+      }
+
+      render(h(App, {}), container);
+    },
+    // Called when a user manually stops the plugin
+    // or when plugin code is updated.
+    // Use this to clean up any resources or event listeners
+    // that you set up during mount.
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    unmount: () => {},
+  };
+}
