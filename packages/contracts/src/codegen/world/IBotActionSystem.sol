@@ -11,11 +11,5 @@ pragma solidity >=0.8.24;
 interface IBotActionSystem {
   function voteforbot__joinMatch(bytes32 matchEntity) external;
 
-  function voteforbot__acceptOrbPayment() external;
-
-  function voteforbot__withdrawbeforeMatchGetCreated() external;
-
-  function voteforbot__createMatch() external;
-
   function voteforbot__process(bytes32 matchEntity) external;
 }

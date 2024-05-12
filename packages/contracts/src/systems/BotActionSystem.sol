@@ -3,7 +3,7 @@ pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
 import {BotMatch, BotMatchData, VoteData, Vote} from '../codegen/index.sol';
-import {PositionData, Position, EntitiesAtPosition, Untraversable, Factory} from '../skystrife/codegen/index.sol';
+import {PositionData, Position, EntitiesAtPosition, Untraversable, Factory, MatchPlayers} from '../skystrife/codegen/index.sol';
 import {IWorld} from '../skystrife/codegen/world/IWorld.sol';
 import { playerFromAddress, matchHasStarted } from "../skystrife/libraries/LibUtils.sol";
 import {LibGold} from '../skystrife/libraries/LibGold.sol';
@@ -18,14 +18,14 @@ contract BotActionSystem is System {
     // TODO setup first factory ?
   }
 
-  // SHould instead use acceptOrbPayment + createMatch
-  function acceptOrbPayment() external {
+  // // SHould instead use acceptOrbPayment + createMatch
+  // function acceptOrbPayment() external {
 
-  }
-  function withdrawbeforeMatchGetCreated() external {}
-  function createMatch() external {
+  // }
+  // function withdrawbeforeMatchGetCreated() external {}
+  // function createMatch() external {
 
-  }
+  // }
 
 
     // no way to get list of enemy units onchain ?
@@ -45,17 +45,40 @@ contract BotActionSystem is System {
  
 
     function _getCurrentTarget(bytes32 matchEntity) internal view returns (bool found, bytes32 playerTarget) {
-        
+        bytes32 botPlayer = playerFromAddress(matchEntity, address(this));
+        bytes32[] memory playersInMatch = MatchPlayers.get(matchEntity); // asume 4 players
+        uint256 i = 0;
+        bytes32 player1;
+        bytes32 player2;
+        bytes32 player3;
+        if (playersInMatch[0] == botPlayer) {
+          player1 = playersInMatch[1];
+          player2 = playersInMatch[2];
+          player3 = playersInMatch[3];
+        } else if (playersInMatch[1] == botPlayer) {
+          player1 = playersInMatch[0];
+          player2 = playersInMatch[2];
+          player3 = playersInMatch[3];
+        } else if (playersInMatch[2] == botPlayer) {
+          player1 = playersInMatch[0];
+          player2 = playersInMatch[1];
+          player3 = playersInMatch[3];
+        } else {
+          player1 = playersInMatch[0];
+          player2 = playersInMatch[1];
+          player3 = playersInMatch[2];
+        }
+
         VoteData memory voteData = _getCurrentVote(matchEntity);
         if (voteData.player1Votes > voteData.player2Votes && voteData.player1Votes > voteData.player3Votes) {
             found = true;
-            playerTarget = 0x0000000000000000000000000000000000000000000000000000000000000001; // TODO
+            playerTarget = player1;
         } else if (voteData.player2Votes > voteData.player1Votes && voteData.player2Votes > voteData.player3Votes) {
             found = true;
-            playerTarget = 0x0000000000000000000000000000000000000000000000000000000000000002; // TODO
+            playerTarget = player2;
         } else if (voteData.player3Votes > voteData.player1Votes && voteData.player3Votes > voteData.player2Votes) {
             found = true;
-            playerTarget = 0x0000000000000000000000000000000000000000000000000000000000000003; // TODO
+            playerTarget = player3;
         }
     }
 
