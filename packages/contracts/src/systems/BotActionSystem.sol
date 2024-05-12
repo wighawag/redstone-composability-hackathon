@@ -2,18 +2,13 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
+import {BotMatch, BotMatchData} from '../codegen/index.sol';
 import {PositionData, Position, EntitiesAtPosition, Untraversable, Factory} from '../skystrife/codegen/index.sol';
 import {IWorld} from '../skystrife/codegen/world/IWorld.sol';
 import { playerFromAddress, matchHasStarted } from "../skystrife/libraries/LibUtils.sol";
 import {LibGold} from '../skystrife/libraries/LibGold.sol';
 
 contract BotActionSystem is System {
-
-    struct MatchInfo {
-        bytes32[] units;
-        bytes32[] factories;
-    }
-    mapping(bytes32 => MatchInfo) matches;
 
 
   function joinMatch(bytes32 matchEntity) external {    
@@ -35,7 +30,7 @@ contract BotActionSystem is System {
 
   function process(bytes32 matchEntity) external {
     IWorld world = IWorld(_world());
-    MatchInfo memory matchInfo = matches[matchEntity];
+    BotMatchData memory matchInfo = BotMatch.get(matchEntity);
 
     _processFactories(world, matchEntity, matchInfo.factories);
     _processUnits(world, matchEntity, matchInfo.units);
@@ -50,6 +45,9 @@ contract BotActionSystem is System {
   }
 
   function _processUnit(IWorld world, bytes32 matchEntity, bytes32 unitEntity) internal {
+    // check if not dead
+    // TODO swap with last and remove last
+
     // TODO find enemy unit or building
     // TODO move or move and fight or fight
   }
@@ -70,7 +68,7 @@ contract BotActionSystem is System {
 
         if (found) {
             bytes32 newUnits = world.build(matchEntity, factoryEntity, templateId, positionToBuild);
-            matches[matchEntity].units.push(newUnits);
+            BotMatch.pushUnits(matchEntity, newUnits);
         }
     }
   }
