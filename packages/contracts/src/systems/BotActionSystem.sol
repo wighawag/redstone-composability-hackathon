@@ -3,7 +3,7 @@ pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
 import {BotMatch, BotMatchData, VoteData, Vote} from '../codegen/index.sol';
-import {PositionData, Position, EntitiesAtPosition, Untraversable, Factory, MatchPlayers} from '../skystrife/codegen/index.sol';
+import {PositionData, Position, EntitiesAtPosition, Untraversable, Factory, MatchPlayers, MatchFinished} from '../skystrife/codegen/index.sol';
 import {IWorld} from '../skystrife/codegen/world/IWorld.sol';
 import { playerFromAddress, matchHasStarted } from "../skystrife/libraries/LibUtils.sol";
 import {LibGold} from '../skystrife/libraries/LibGold.sol';
@@ -11,6 +11,7 @@ import {LibGold} from '../skystrife/libraries/LibGold.sol';
 contract BotActionSystem is System {
 
   error BotNotInMatch();
+  error MatchAlreadyFinished();
 
 
   function joinMatch(bytes32 matchEntity) external {    
@@ -19,6 +20,8 @@ contract BotActionSystem is System {
 
     // TODO setup first factory ?
   }
+
+  
 
   // // SHould instead use acceptOrbPayment + createMatch
   // function acceptOrbPayment() external {
@@ -30,9 +33,28 @@ contract BotActionSystem is System {
   // }
 
 
+
+  // to be called once so that the bot knows its first factory
+  function init(bytes32 matchEntity, bytes32 factoryEntity) external {
+    if (MatchFinished.get(matchEntity)) {
+      revert MatchAlreadyFinished();
+    }
+    bytes32[] memory factories = BotMatch.getFactories(matchEntity);
+    for (uint256 i = 0; i < factories.length; i++) {
+      if (factories[i] == factoryEntity) {
+        return;
+      }
+    }
+    BotMatch.pushFactories(matchEntity, factoryEntity);
+  }
+
     // no way to get list of enemy units onchain ?
     // passing units list work but allow bot runner to affect which factory get used  
   function process(bytes32 matchEntity) external {
+    if (MatchFinished.get(matchEntity)) {
+      revert MatchAlreadyFinished();
+    }
+
     IWorld world = IWorld(_world());
     BotMatchData memory matchInfo = BotMatch.get(matchEntity);
 
@@ -101,6 +123,7 @@ contract BotActionSystem is System {
 
   function _processUnit(IWorld world, bytes32 matchEntity, bytes32 unitEntity) internal {
     // check if not dead
+
     // TODO swap with last and remove last
 
     // TODO find enemy unit or building

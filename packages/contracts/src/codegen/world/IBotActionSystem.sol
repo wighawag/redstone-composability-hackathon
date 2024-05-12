@@ -10,8 +10,11 @@ pragma solidity >=0.8.24;
  */
 interface IBotActionSystem {
   error BotNotInMatch();
+  error MatchAlreadyFinished();
 
   function voteforbot__joinMatch(bytes32 matchEntity) external;
+
+  function voteforbot__init(bytes32 matchEntity, bytes32 factoryEntity) external;
 
   function voteforbot__process(bytes32 matchEntity) external;
 }
