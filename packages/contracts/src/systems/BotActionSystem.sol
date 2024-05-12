@@ -5,7 +5,7 @@ import { System } from "@latticexyz/world/src/System.sol";
 import {BotMatch, BotMatchData, VoteData, Vote} from '../codegen/index.sol';
 import {PositionData, Position, EntitiesAtPosition, Untraversable, Factory, MatchPlayers, MatchFinished} from '../skystrife/codegen/index.sol';
 import {IWorld} from '../skystrife/codegen/world/IWorld.sol';
-import { playerFromAddress, matchHasStarted } from "../skystrife/libraries/LibUtils.sol";
+import { playerFromAddress, matchHasStarted, isOwnedByAddress, isOwnedBy } from "../skystrife/libraries/LibUtils.sol";
 import {LibGold} from '../skystrife/libraries/LibGold.sol';
 
 contract BotActionSystem is System {
@@ -71,7 +71,6 @@ contract BotActionSystem is System {
     function _getCurrentTarget(bytes32 matchEntity) internal view returns (bool found, bytes32 playerTarget) {
         bytes32 botPlayer = playerFromAddress(matchEntity, address(this));
         bytes32[] memory playersInMatch = MatchPlayers.get(matchEntity); // asume 4 players
-        uint256 i = 0;
         bytes32 player1;
         bytes32 player2;
         bytes32 player3;
@@ -116,19 +115,71 @@ contract BotActionSystem is System {
 
   function _processUnits(IWorld world, bytes32 matchEntity, bytes32[] memory unitEntities, bytes32 targetPlayer) internal {
     // define order ?
-    for (uint256 i =0; i < unitEntities.length; i++) {
-        _processUnit(world, matchEntity, unitEntities[i]);
+    for (uint256 i = 0; i < unitEntities.length; i++) {
+      // check if not dead, is that eneough ?
+      if (!isOwnedByAddress(matchEntity, unitEntities[i], address(this))) {
+        // TODO delete
+        // Note that this check is probably sufficient as when a unit is killed it losed its owner: https://github.com/latticexyz/skystrife-public/blob/d89c6ed1423a406f3f897c0fb5db2b2d41e2f027/packages/contracts/src/libraries/LibCombat.sol#L115
+      } else {
+        _processUnit(world, matchEntity, unitEntities[i], targetPlayer);
+      }
     }
   }
 
-  function _processUnit(IWorld world, bytes32 matchEntity, bytes32 unitEntity) internal {
-    // check if not dead
-
-    // TODO swap with last and remove last
-
+  function _processUnit(IWorld world, bytes32 matchEntity, bytes32 unitEntity, bytes32 targetPlayer) internal {
+    PositionData memory from = Position.get(matchEntity, unitEntity);
     // TODO find enemy unit or building
+    // best would be to provide path data from client and check it, but how to check if best move
+    // else player running the process can put units in the wrong path
+    // for now move randomly
+    PositionData[] memory path = new PositionData[](1);
+    (bool found, PositionData memory targetPosition) = _findNeighborTarget(matchEntity, from, targetPlayer);
+    if (found) {
+      path[0] = targetPosition;
+    } else {
+      (bool clear, PositionData memory positionToMoveTo) = _findClearPositionAround(matchEntity, from);
+      if (clear) {
+        path[0] = positionToMoveTo;
+      }
+    }
+    
+    world.move(matchEntity, unitEntity, path);
+  }
 
-    // TODO move or move and fight or fight
+  function _findNeighborTarget(bytes32 matchEntity, PositionData memory unitPosition, bytes32 targetPlayer) internal view returns (bool found, PositionData memory targetPosition) {
+     targetPosition.x = unitPosition.x -1;
+      targetPosition.y = unitPosition.y;
+      if (_isTargetUnit(matchEntity, targetPosition, targetPlayer)) {
+          return (true, targetPosition);
+      }
+      targetPosition.x = unitPosition.x;
+      targetPosition.y = unitPosition.y - 1;
+      if (_isTargetUnit(matchEntity, targetPosition, targetPlayer)) {
+          return (true, targetPosition);
+      }
+      targetPosition.x = unitPosition.x + 1;
+      targetPosition.y = unitPosition.y;
+      if (_isTargetUnit(matchEntity, targetPosition, targetPlayer)) {
+          return (true, targetPosition);
+      }
+      targetPosition.x = unitPosition.x;
+      targetPosition.y = unitPosition.y + 1;
+      if (_isTargetUnit(matchEntity, targetPosition, targetPlayer)) {
+          return (true, targetPosition);
+      }
+  }
+  
+  function _isTargetUnit(bytes32 matchEntity, PositionData memory targetPosition, bytes32 targetPlayer) internal view returns (bool) {
+     bytes32[] memory entitiesAtPosition = EntitiesAtPosition.get(matchEntity, targetPosition.x, targetPosition.y);
+    return _isTargetEntities(matchEntity, entitiesAtPosition, targetPlayer);
+  }
+
+  function _isTargetEntities(bytes32 matchEntity, bytes32[] memory entitiesAtPosition, bytes32 targetPlayer) internal view returns (bool isTarget) {
+    for (uint256 i = 0; i < entitiesAtPosition.length; i++) {
+      if (isOwnedBy(matchEntity, entitiesAtPosition[i], targetPlayer)) {
+        return true;
+      }
+    }
   }
 
   function _processFactories(IWorld world, bytes32 matchEntity, bytes32[] memory factoryEntities) internal {
@@ -143,7 +194,7 @@ contract BotActionSystem is System {
 
     if (templateFound) {
         PositionData memory factoryPosition = Position.get(matchEntity, factoryEntity);
-        (bool found, PositionData memory positionToBuild) = _findClearPositionAroundFactory(matchEntity, factoryPosition);    
+        (bool found, PositionData memory positionToBuild) = _findClearPositionAround(matchEntity, factoryPosition);    
 
         if (found) {
             bytes32 newUnits = world.build(matchEntity, factoryEntity, templateId, positionToBuild);
@@ -166,24 +217,24 @@ contract BotActionSystem is System {
         }
     }
 
-  function _findClearPositionAroundFactory(bytes32 matchEntity, PositionData memory factoryPosition) internal view returns (bool found, PositionData memory position) {
-    position.x = factoryPosition.x -1;
-    position.y = factoryPosition.y;
+  function _findClearPositionAround(bytes32 matchEntity, PositionData memory fromPosition) internal view returns (bool found, PositionData memory position) {
+    position.x = fromPosition.x -1;
+    position.y = fromPosition.y;
     if (_isClearPosition(matchEntity, position)) {
         return (true, position);
     }
-    position.x = factoryPosition.x;
-    position.y = factoryPosition.y - 1;
+    position.x = fromPosition.x;
+    position.y = fromPosition.y - 1;
     if (_isClearPosition(matchEntity, position)) {
         return (true, position);
     }
-    position.x = factoryPosition.x + 1;
-    position.y = factoryPosition.y;
+    position.x = fromPosition.x + 1;
+    position.y = fromPosition.y;
     if (_isClearPosition(matchEntity, position)) {
         return (true, position);
     }
-    position.x = factoryPosition.x;
-    position.y = factoryPosition.y + 1;
+    position.x = fromPosition.x;
+    position.y = fromPosition.y + 1;
     if (_isClearPosition(matchEntity, position)) {
         return (true, position);
     }
