@@ -132,52 +132,50 @@ contract BotActionSystem is System {
     // best would be to provide path data from client and check it, but how to check if best move
     // else player running the process can put units in the wrong path
     // for now move randomly
-    PositionData[] memory path = new PositionData[](1);
-    (bool found, PositionData memory targetPosition) = _findNeighborTarget(matchEntity, from, targetPlayer);
+    
+    (bool found, bytes32 targetEntity, ) = _findNeighborTarget(matchEntity, from, targetPlayer);
     if (found) {
-      path[0] = targetPosition;
+       world.fight(matchEntity, unitEntity, targetEntity);
     } else {
       (bool clear, PositionData memory positionToMoveTo) = _findClearPositionAround(matchEntity, from);
       if (clear) {
+        PositionData[] memory path = new PositionData[](1);
         path[0] = positionToMoveTo;
+        world.move(matchEntity, unitEntity, path);
       }
     }
     
-    world.move(matchEntity, unitEntity, path);
+   
   }
 
-  function _findNeighborTarget(bytes32 matchEntity, PositionData memory unitPosition, bytes32 targetPlayer) internal view returns (bool found, PositionData memory targetPosition) {
-     targetPosition.x = unitPosition.x -1;
-      targetPosition.y = unitPosition.y;
-      if (_isTargetUnit(matchEntity, targetPosition, targetPlayer)) {
-          return (true, targetPosition);
-      }
-      targetPosition.x = unitPosition.x;
-      targetPosition.y = unitPosition.y - 1;
-      if (_isTargetUnit(matchEntity, targetPosition, targetPlayer)) {
-          return (true, targetPosition);
-      }
-      targetPosition.x = unitPosition.x + 1;
-      targetPosition.y = unitPosition.y;
-      if (_isTargetUnit(matchEntity, targetPosition, targetPlayer)) {
-          return (true, targetPosition);
-      }
-      targetPosition.x = unitPosition.x;
-      targetPosition.y = unitPosition.y + 1;
-      if (_isTargetUnit(matchEntity, targetPosition, targetPlayer)) {
-          return (true, targetPosition);
-      }
+  function _findNeighborTarget(bytes32 matchEntity, PositionData memory unitPosition, bytes32 targetPlayer) internal view returns (bool found, bytes32 targetEntity, PositionData memory targetPosition) {
+    PositionData[] memory neighborsDelta =  new PositionData[](4);
+    neighborsDelta[0] = PositionData({x: -1, y: 0});
+    neighborsDelta[1] = PositionData({x: 0, y: -1});
+    neighborsDelta[2] = PositionData({x: 1, y: 0});
+    neighborsDelta[3] = PositionData({x: 0, y: 1});
+
+    uint256 offset = block.timestamp % 4;
+    for (uint256 i = 0; i < neighborsDelta.length; i++){
+      uint256 index = (i + offset) % 4;
+      targetPosition.x = unitPosition.x + neighborsDelta[index].x;
+      targetPosition.y = unitPosition.y + neighborsDelta[index].y;
+      (found, targetEntity) = _hasTargetUnit(matchEntity, targetPosition, targetPlayer);
+      if (found) {
+          return (found, targetEntity, targetPosition);
+      } 
+    }
   }
   
-  function _isTargetUnit(bytes32 matchEntity, PositionData memory targetPosition, bytes32 targetPlayer) internal view returns (bool) {
+  function _hasTargetUnit(bytes32 matchEntity, PositionData memory targetPosition, bytes32 targetPlayer) internal view returns (bool found, bytes32 targetEntity) {
      bytes32[] memory entitiesAtPosition = EntitiesAtPosition.get(matchEntity, targetPosition.x, targetPosition.y);
     return _isTargetEntities(matchEntity, entitiesAtPosition, targetPlayer);
   }
 
-  function _isTargetEntities(bytes32 matchEntity, bytes32[] memory entitiesAtPosition, bytes32 targetPlayer) internal view returns (bool isTarget) {
+  function _isTargetEntities(bytes32 matchEntity, bytes32[] memory entitiesAtPosition, bytes32 targetPlayer) internal view returns (bool isTarget, bytes32 targetEntity) {
     for (uint256 i = 0; i < entitiesAtPosition.length; i++) {
       if (isOwnedBy(matchEntity, entitiesAtPosition[i], targetPlayer)) {
-        return true;
+        return (true, entitiesAtPosition[i]);
       }
     }
   }
@@ -218,27 +216,22 @@ contract BotActionSystem is System {
     }
 
   function _findClearPositionAround(bytes32 matchEntity, PositionData memory fromPosition) internal view returns (bool found, PositionData memory position) {
-    position.x = fromPosition.x -1;
-    position.y = fromPosition.y;
-    if (_isClearPosition(matchEntity, position)) {
-        return (true, position);
+    PositionData[] memory neighborsDelta =  new PositionData[](4);
+    neighborsDelta[0] = PositionData({x: -1, y: 0});
+    neighborsDelta[1] = PositionData({x: 0, y: -1});
+    neighborsDelta[2] = PositionData({x: 1, y: 0});
+    neighborsDelta[3] = PositionData({x: 0, y: 1});
+
+    uint256 offset = block.timestamp % 4;
+    for (uint256 i = 0; i < neighborsDelta.length; i++){
+      uint256 index = (i + offset) % 4;
+      position.x = fromPosition.x + neighborsDelta[index].x;
+      position.y = fromPosition.y + neighborsDelta[index].y;
+      (found) = _isClearPosition(matchEntity, position);
+      if (found) {
+          return (found, position);
+      } 
     }
-    position.x = fromPosition.x;
-    position.y = fromPosition.y - 1;
-    if (_isClearPosition(matchEntity, position)) {
-        return (true, position);
-    }
-    position.x = fromPosition.x + 1;
-    position.y = fromPosition.y;
-    if (_isClearPosition(matchEntity, position)) {
-        return (true, position);
-    }
-    position.x = fromPosition.x;
-    position.y = fromPosition.y + 1;
-    if (_isClearPosition(matchEntity, position)) {
-        return (true, position);
-    }
-    return (false, position);
   }
 
   function _isClearPosition(bytes32 matchEntity, PositionData memory position) internal view returns (bool clear) {
