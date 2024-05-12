@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redstone Hack 24</title>
+<style>
+    /* Add your CSS styles for responsiveness here */
+    body {
+        font-family: 'Press Start 2P', cursive;
+        background-color: #000;
+        color: #fff;
+        text-align: center;
+    }
+    .container {
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .input-group {
+        margin-bottom: 20px;
+    }
+    .input-group input[type="text"] {
+        width: calc(100% - 80px);
+        padding: 10px;
+        border: none;
+        border-bottom: 2px solid #fff;
+        background-color: transparent;
+        color: #fff;
+        font-family: 'Press Start 2P', cursive;
+    }
+    .input-group button {
+        width: 80px;
+        padding: 10px;
+        background-color: #007bff;
+        border: none;
+        border-radius: 5px;
+        color: #fff;
+        cursor: pointer;
+        font-family: 'Press Start 2P', cursive;
+    }
+    .feedback {
+        margin-top: 20px;
+        padding: 10px;
+        border-radius: 5px;
+    }
+    .success {
+        background-color: #28a745;
+    }
+    .error {
+        background-color: #dc3545;
+    }
+    .links {
+        margin-top: 40px;
+    }
+    .links a {
+        display: inline-block;
+        margin: 0 10px;
+        text-decoration: none;
+        color: #fff;
+        font-family: 'Press Start 2P', cursive;
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>Want Democracy in Sky Strife?</h1>
+    <div>
+        <p>1. Send the bot's entry fee to the address below</p> <!-- Description for Copy Wallet Address section -->
+        <div class="input-group">
+            <input type="text" id="walletAddress" value="0xf943EBFA33d63376123335ad2096AEe6d3aC1374" readonly>
+            <button onclick="copyWalletAddress()">Copy</button>
+        </div>
+    </div>
+    <div>
+        <p>2. Paste a match ID to invite the bot</p> <!-- Description for Paste Match ID section -->
+        <div class="input-group">
+            <input type="text" id="matchID" placeholder="Paste Match ID">
+        </div>
+    </div>
+    <div class="input-group">
+        <button onclick="executeAction()">Execute</button>
+    </div>
+    <div class="feedback" id="feedback"></div>
+</div>
+
+<div class="links">
+    <a href="https://play.skystrife.xyz/">Tutorial</a>
+    <a href="https://play.skystrife.xyz/">Twitter</a>
+</div>
+
+<script>
+    // Function to copy wallet address to clipboard
+    function copyWalletAddress() {
+        var walletAddress = document.getElementById("walletAddress");
+        walletAddress.select();
+        document.execCommand("copy");
+        showFeedback("Wallet address copied!", "success");
+    }
+
+    // Function to execute action
+    function executeAction() {
+        var matchID = document.getElementById("matchID").value;
+        // Implement your action here, for demonstration purposes, just show feedback
+        if (matchID.trim() !== "") {
+            showFeedback("Action executed successfully!", "success");
+        } else {
+            showFeedback("Please paste a valid Match ID.", "error");
+        }
+    }
+
+    // Function to display feedback messages
+    function showFeedback(message, type) {
+        var feedback = document.getElementById("feedback");
+        feedback.textContent = message;
+        feedback.className = "feedback " + type;
+        setTimeout(function() {
+            feedback.textContent = "";
+            feedback.className = "feedback";
+        }, 3000); // Hide feedback after 3 seconds
+    }
+</script>
+</body>
+</html>
