@@ -15,11 +15,14 @@
     "test": "tsc --noEmit && mud test"
   },
   "dependencies": {
+    "@dk1a/solidity-stringutils": "0.3.3",
     "@latticexyz/cli": "2.0.7",
     "@latticexyz/schema-type": "2.0.7",
     "@latticexyz/store": "2.0.7",
     "@latticexyz/world": "2.0.7",
-    "@latticexyz/world-modules": "2.0.7"
+    "@latticexyz/world-modules": "2.0.7",
+    "@openzeppelin/contracts": "4.9.3",
+    "solmate": "6.2.0"
   },
   "devDependencies": {
     "@types/node": "^18.15.11",
