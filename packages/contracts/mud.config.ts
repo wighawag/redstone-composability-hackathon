@@ -3,22 +3,14 @@ import { defineWorld } from "@latticexyz/world";
 export default defineWorld({
   namespace: 'voteforbot',
   tables: {
-    Vote0: {
-      key: ["matchEntity"],
+    Vote: {
+      key: ["matchEntity", "round"],
       schema: {
         matchEntity: "bytes32",
-        voteForPlayer1: "uint8",
-        voteForPlayer2: "uint8",
-        voteForPlayer3: "uint8",
-      },
-    },
-    Vote1: {
-      key: ["matchEntity"],
-      schema: {
-        matchEntity: "bytes32",
-        voteForPlayer1: "uint8",
-        voteForPlayer2: "uint8",
-        voteForPlayer3: "uint8",
+        round: "uint8",
+        player1Votes: "uint8",
+        player2Votes: "uint8",
+        player3Votes: "uint8",
       },
     },
     BotMatch: {

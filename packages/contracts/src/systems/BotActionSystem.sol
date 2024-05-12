@@ -2,7 +2,7 @@
 pragma solidity >=0.8.24;
 
 import { System } from "@latticexyz/world/src/System.sol";
-import {BotMatch, BotMatchData, Vote0Data, Vote0, Vote1Data, Vote1} from '../codegen/index.sol';
+import {BotMatch, BotMatchData, VoteData, Vote} from '../codegen/index.sol';
 import {PositionData, Position, EntitiesAtPosition, Untraversable, Factory} from '../skystrife/codegen/index.sol';
 import {IWorld} from '../skystrife/codegen/world/IWorld.sol';
 import { playerFromAddress, matchHasStarted } from "../skystrife/libraries/LibUtils.sol";
@@ -10,11 +10,6 @@ import {LibGold} from '../skystrife/libraries/LibGold.sol';
 
 contract BotActionSystem is System {
 
- struct VoteData {
-    uint8 player1Votes;
-    uint8 player2Votes;
-    uint8 player3Votes;
- }
 
   function joinMatch(bytes32 matchEntity) external {    
     // join the match
@@ -47,7 +42,7 @@ contract BotActionSystem is System {
     }
     
   }
-
+ 
 
     function _getCurrentTarget(bytes32 matchEntity) internal view returns (bool found, bytes32 playerTarget) {
         
@@ -66,17 +61,7 @@ contract BotActionSystem is System {
 
   function _getCurrentVote(bytes32 matchEntity) internal view returns (VoteData memory voteData) {
     uint256 round = (block.timestamp / 60) % 2;
-    if (round == 0) {
-        Vote0Data memory v = Vote0.get(matchEntity);
-        voteData.player1Votes = v.voteForPlayer1;
-        voteData.player2Votes = v.voteForPlayer2;
-        voteData.player3Votes = v.voteForPlayer3;
-    } else {
-        Vote1Data memory v = Vote1.get(matchEntity);
-        voteData.player1Votes = v.voteForPlayer1;
-        voteData.player2Votes = v.voteForPlayer2;
-        voteData.player3Votes = v.voteForPlayer3;
-    }
+    voteData = Vote.get(matchEntity, uint8(round));
   }
 
 
@@ -92,6 +77,7 @@ contract BotActionSystem is System {
     // TODO swap with last and remove last
 
     // TODO find enemy unit or building
+
     // TODO move or move and fight or fight
   }
 
