@@ -9,6 +9,8 @@ pragma solidity >=0.8.24;
  * @dev This interface is automatically generated from the corresponding system contract. Do not edit manually.
  */
 interface IBotActionSystem {
+  error BotNotInMatch();
+
   function voteforbot__joinMatch(bytes32 matchEntity) external;
 
   function voteforbot__process(bytes32 matchEntity) external;

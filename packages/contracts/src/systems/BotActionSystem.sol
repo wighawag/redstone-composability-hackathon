@@ -10,6 +10,8 @@ import {LibGold} from '../skystrife/libraries/LibGold.sol';
 
 contract BotActionSystem is System {
 
+  error BotNotInMatch();
+
 
   function joinMatch(bytes32 matchEntity) external {    
     // join the match
@@ -63,10 +65,12 @@ contract BotActionSystem is System {
           player1 = playersInMatch[0];
           player2 = playersInMatch[1];
           player3 = playersInMatch[3];
-        } else {
+        } else if (playersInMatch[3] == botPlayer) {
           player1 = playersInMatch[0];
           player2 = playersInMatch[1];
           player3 = playersInMatch[2];
+        } else {
+          revert BotNotInMatch();
         }
 
         VoteData memory voteData = _getCurrentVote(matchEntity);
