@@ -9,11 +9,18 @@ import {LibGold} from '../skystrife/libraries/LibGold.sol';
 
 contract BotActionSystem is System {
 
+    struct MatchInfo {
+        bytes32[] units;
+        bytes32[] factories;
+    }
+    mapping(bytes32 => MatchInfo) matches;
+
 
   function joinMatch(bytes32 matchEntity) external {    
     // join the match
     // for noew take the orb from msg.sender
 
+    // TODO setup first factory ?
   }
 
   // SHould instead use acceptOrbPayment + createMatch
@@ -26,15 +33,12 @@ contract BotActionSystem is System {
   }
 
 
-
-// no way to get list of factories onchain ?
-// passing factories list work but allow bot runner to affect which factory get used
-// no way to get list of units onchain ?
-// passing units list work but allow bot runner to affect which factory get used  
-  function process(bytes32 matchEntity, bytes32[] memory factoryEntities, bytes32[] memory unitEntities) external {
+  function process(bytes32 matchEntity) external {
     IWorld world = IWorld(_world());
-    _processFactories(world, matchEntity, factoryEntities);
-    _processUnits(world, matchEntity, unitEntities);
+    MatchInfo memory matchInfo = matches[matchEntity];
+
+    _processFactories(world, matchEntity, matchInfo.factories);
+    _processUnits(world, matchEntity, matchInfo.units);
   }
 
 
@@ -65,7 +69,8 @@ contract BotActionSystem is System {
         (bool found, PositionData memory positionToBuild) = _findClearPositionAroundFactory(matchEntity, factoryPosition);    
 
         if (found) {
-            world.build(matchEntity, factoryEntity, templateId, positionToBuild);
+            bytes32 newUnits = world.build(matchEntity, factoryEntity, templateId, positionToBuild);
+            matches[matchEntity].units.push(newUnits);
         }
     }
   }

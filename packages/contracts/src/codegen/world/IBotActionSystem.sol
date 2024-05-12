@@ -17,9 +17,5 @@ interface IBotActionSystem {
 
   function voteforbot__createMatch() external;
 
-  function voteforbot__process(
-    bytes32 matchEntity,
-    bytes32[] memory factoryEntities,
-    bytes32[] memory unitEntities
-  ) external;
+  function voteforbot__process(bytes32 matchEntity) external;
 }
