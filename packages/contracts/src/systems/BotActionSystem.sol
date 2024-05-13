@@ -24,6 +24,7 @@ import {IWorld} from "../skystrife/codegen/world/IWorld.sol";
 import { SpawnSettlementTemplateId } from "../skystrife/codegen/Templates.sol";
 import {playerFromAddress, matchHasStarted, isOwnedByAddress, isOwnedBy} from "../skystrife/libraries/LibUtils.sol";
 import {LibGold} from "../skystrife/libraries/LibGold.sol";
+import {LibMove} from "../skystrife/libraries/LibMove.sol";
 import {findMapCenter} from "../skystrife/libraries/LibMatch.sol";
 import {createMatchEntity} from "../skystrife/createMatchEntity.sol";
 
@@ -416,6 +417,11 @@ contract BotActionSystem is System {
 
     function _isClearPosition(bytes32 matchEntity, PositionData memory position) internal view returns (bool clear) {
         if (position.x == BotMatch.getSpawnX(matchEntity) && position.y == BotMatch.getSpawnY(matchEntity)) {
+            return false;
+        }
+        bytes32 levelId = MatchConfig.getLevelId(matchEntity);
+        int32 movementDifficulty = LibMove.getMovementDifficultyAtPosition(levelId, position);
+        if (movementDifficulty <= 0) {
             return false;
         }
         bytes32[] memory entitiesAtPosition = EntitiesAtPosition.get(matchEntity, position.x, position.y);
