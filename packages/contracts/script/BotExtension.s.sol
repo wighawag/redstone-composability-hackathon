@@ -20,14 +20,30 @@ import {StoreSwitch} from "@latticexyz/store/src/StoreSwitch.sol";
 // For deploying BotActionSystem
 import {BotActionSystem} from "../src/systems/BotActionSystem.sol";
 
+
+function stringToBytes32(string memory source) 
+        pure
+        returns (bytes32 result) 
+    {
+        bytes memory tempEmptyStringTest = bytes(source);
+        if (tempEmptyStringTest.length == 0) {
+            return 0x0;
+        }
+
+        assembly {
+            result := mload(add(source, 32))
+        }
+    }
+
 contract BotExtensionDeploy is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address worldAddress = vm.envAddress("WORLD_ADDRESS");
+        bytes14 namespace = bytes14(stringToBytes32(vm.envString("NAMESPACE")));
 
         WorldRegistrationSystem world = WorldRegistrationSystem(worldAddress);
-        ResourceId namespaceResource = WorldResourceIdLib.encodeNamespace(bytes14("voteforbot"));
-        ResourceId systemResource = WorldResourceIdLib.encode(RESOURCE_SYSTEM, "voteforbot", "BotActionSystem");
+        ResourceId namespaceResource = WorldResourceIdLib.encodeNamespace(namespace);
+        ResourceId systemResource = WorldResourceIdLib.encode(RESOURCE_SYSTEM, namespace, "BotActionSystem");
 
         vm.startBroadcast(deployerPrivateKey);
         world.registerNamespace(namespaceResource);

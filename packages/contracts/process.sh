@@ -1,4 +1,4 @@
 #!/bin/env bash
-echo "bot processing in match: $1"
 source .env
-cast send $WORLD_ADDRESS --rpc-url http://localhost:8545 --private-key $PRIVATE_KEY "voteforbot__process(bytes32)" $1 
+echo "bot processing in match: $MATCH_ID"
+cast send $WORLD_ADDRESS --rpc-url http://localhost:8545 --private-key $PRIVATE_KEY "${NAMESPACE}__process(bytes32)" $MATCH_ID

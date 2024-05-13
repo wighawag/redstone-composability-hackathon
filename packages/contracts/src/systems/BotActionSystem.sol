@@ -16,7 +16,8 @@ import {
     LevelTemplates,
     HeroInRotation,
     SpawnReservedBy,
-    MatchSpawnPoints
+    MatchSpawnPoints,
+    NameExists
 } from "../skystrife/codegen/index.sol";
 import {IWorld} from "../skystrife/codegen/world/IWorld.sol";
 import { SpawnSettlementTemplateId } from "../skystrife/codegen/Templates.sol";
@@ -47,20 +48,29 @@ contract BotActionSystem is System {
         uint256 numSpawnPointsPrior = MatchSpawnPoints.length(matchEntity);
         IWorld world = IWorld(_world());
         world.register(matchEntity, spawnIndex, heroChoice);
-        world.setName("Joker");
+        string memory name = "Joker2";
+        bytes32 nameBytes = bytes32(keccak256(bytes(name)));
+        if (NameExists.get(nameBytes) == false) {
+          world.setName(name);
+        }
+        
         world.toggleReady(matchEntity);
 
-        // We get the spawn point from the last index
+       _setupFactoriesAndUnits(matchEntity, numSpawnPointsPrior);
+    }
+
+    function _setupFactoriesAndUnits(bytes32 matchEntity, uint256 numSpawnPointsPrior) internal {
+       // We get the spawn point from the last index
         bytes32 spawnPoint = MatchSpawnPoints.getItem(matchEntity, numSpawnPointsPrior);
         PositionData memory spawnPosition = Position.get(matchEntity, spawnPoint);
+        
+        bytes32[] memory moreEntities = EntitiesAtPosition.get(matchEntity, spawnPosition.x, spawnPosition.y);
+        for (uint256 i = 0; i < moreEntities.length; i++) {
+          // we then push units created there (should be the hero)
+          BotMatch.pushFactories(matchEntity, moreEntities[i]);
+        }
+
         PositionData memory mapCenter = findMapCenter(matchEntity);
-
-        //  bytes32[] memory moreEntities = EntitiesAtPosition.get(matchEntity, spawnPosition.x, spawnPosition.y);
-        // for (uint256 i = 0; i < moreEntities.length; i++) {
-        //   // we then push units created there (should be the hero)
-        //   BotMatch.pushFactories(matchEntity, moreEntities[i]);
-        // }
-
         // we compute the location of the heror based on LibMatch.spawnStarter 
         int32 xDiff = spawnPosition.x - mapCenter.x;
         int32 yDiff = spawnPosition.y - mapCenter.y;
@@ -79,10 +89,6 @@ contract BotActionSystem is System {
           BotMatch.pushUnits(matchEntity, entities[i]);
         }
         
-       
-
-
-        // TODO setup first factory ?
     }
 
     function _findSpawn(bytes32 matchEntity, uint256 spawnIndexToStartFrom) internal view returns (bool found, uint256 spawnIndex) {
@@ -337,6 +343,7 @@ contract BotActionSystem is System {
             if (goldCost <= gold) {
                 found = true;
                 templateId = templateIds[i];
+                return (found, templateId);
             }
         }
     }
