@@ -19,6 +19,7 @@ import {
     MatchSpawnPoints
 } from "../skystrife/codegen/index.sol";
 import {IWorld} from "../skystrife/codegen/world/IWorld.sol";
+import { SpawnSettlementTemplateId } from "../skystrife/codegen/Templates.sol";
 import {playerFromAddress, matchHasStarted, isOwnedByAddress, isOwnedBy} from "../skystrife/libraries/LibUtils.sol";
 import {LibGold} from "../skystrife/libraries/LibGold.sol";
 import {findMapCenter} from "../skystrife/libraries/LibMatch.sol";
@@ -28,12 +29,21 @@ contract BotActionSystem is System {
     error BotNotInMatch();
     error MatchAlreadyFinished();
 
-    function joinMatch(bytes32 matchEntity, uint256 spawnIndex, bytes32 heroChoice) external {
+
+    uint256 constant public NUM_SECONDS = 30;
+
+    function joinMatch(bytes32 matchEntity, uint256 spawnIndexToStartFrom, bytes32 heroChoice) external {
         // join the match
         // for noew take the orb from msg.sender
         // MatchConfigData memory matchConfig = MatchConfig.get(matchEntity);
         // bytes32 isReserved = SpawnReservedBy.get(matchEntity, 0);
 
+
+        (bool foundSpawn, uint256 spawnIndex) = _findSpawn(matchEntity, spawnIndexToStartFrom);
+
+        require(foundSpawn, "no available spawn point found");
+        
+        
         uint256 numSpawnPointsPrior = MatchSpawnPoints.length(matchEntity);
         IWorld world = IWorld(_world());
         world.register(matchEntity, spawnIndex, heroChoice);
@@ -44,6 +54,12 @@ contract BotActionSystem is System {
         bytes32 spawnPoint = MatchSpawnPoints.getItem(matchEntity, numSpawnPointsPrior);
         PositionData memory spawnPosition = Position.get(matchEntity, spawnPoint);
         PositionData memory mapCenter = findMapCenter(matchEntity);
+
+        //  bytes32[] memory moreEntities = EntitiesAtPosition.get(matchEntity, spawnPosition.x, spawnPosition.y);
+        // for (uint256 i = 0; i < moreEntities.length; i++) {
+        //   // we then push units created there (should be the hero)
+        //   BotMatch.pushFactories(matchEntity, moreEntities[i]);
+        // }
 
         // we compute the location of the heror based on LibMatch.spawnStarter 
         int32 xDiff = spawnPosition.x - mapCenter.x;
@@ -63,8 +79,21 @@ contract BotActionSystem is System {
           BotMatch.pushUnits(matchEntity, entities[i]);
         }
         
+       
+
 
         // TODO setup first factory ?
+    }
+
+    function _findSpawn(bytes32 matchEntity, uint256 spawnIndexToStartFrom) internal view returns (bool found, uint256 spawnIndex) {
+        bytes32 levelId = MatchConfig.getLevelId(matchEntity);
+        for (uint256 i = spawnIndexToStartFrom; i < 10000; i++) {
+          if (LevelTemplates.getItem(levelId, i) == SpawnSettlementTemplateId && SpawnReservedBy.get(matchEntity, i) == 0) {
+            return (true, i);
+          }
+        }
+        // fallback
+        return (true, spawnIndexToStartFrom);
     }
 
     // // SHould instead use acceptOrbPayment + createMatch
@@ -104,6 +133,44 @@ contract BotActionSystem is System {
 
         _processFactories(world, matchEntity, matchInfo.factories);
         _processUnits(world, matchEntity, matchInfo.units, foundTarget, targetPlayer);
+    }
+
+
+
+     function vote(bytes32 matchEntity, uint8 voteIndex) external {
+        if (MatchFinished.get(matchEntity)) {
+            revert MatchAlreadyFinished();
+        }
+
+        uint8 nextRound = uint8(((block.timestamp / NUM_SECONDS) +1) % 2); // every 30 seconds
+        if (voteIndex == 1) {
+          Vote.setPlayer1Votes(matchEntity, nextRound, Vote.getPlayer1Votes(matchEntity, nextRound) + 1);
+        } else if (voteIndex == 2) {
+          Vote.setPlayer2Votes(matchEntity, nextRound, Vote.getPlayer2Votes(matchEntity, nextRound) + 1);
+        } else if (voteIndex == 3) {
+          Vote.setPlayer3Votes(matchEntity, nextRound, Vote.getPlayer3Votes(matchEntity, nextRound) + 1);
+        } else {
+          require(false, "invalid vote");
+        }
+        
+    }
+
+    function forceVoteNow(bytes32 matchEntity, uint8 voteIndex) external {
+        if (MatchFinished.get(matchEntity)) {
+            revert MatchAlreadyFinished();
+        }
+
+        uint8 round = uint8(((block.timestamp / NUM_SECONDS)) % 2); // every 30 seconds
+        if (voteIndex == 1) {
+          Vote.setPlayer1Votes(matchEntity, round, Vote.getPlayer1Votes(matchEntity, round) + 1);
+        } else if (voteIndex == 2) {
+          Vote.setPlayer2Votes(matchEntity, round, Vote.getPlayer2Votes(matchEntity, round) + 1);
+        } else if (voteIndex == 3) {
+          Vote.setPlayer3Votes(matchEntity, round, Vote.getPlayer3Votes(matchEntity, round) + 1);
+        } else {
+          require(false, "invalid vote");
+        }
+        
     }
 
     function _getCurrentTarget(bytes32 matchEntity) internal view returns (bool found, bytes32 playerTarget) {
@@ -149,7 +216,7 @@ contract BotActionSystem is System {
     }
 
     function _getCurrentVote(bytes32 matchEntity) internal view returns (VoteData memory voteData) {
-        uint256 round = (block.timestamp / 60) % 2;
+        uint256 round = (block.timestamp / NUM_SECONDS) % 2;
         voteData = Vote.get(matchEntity, uint8(round));
     }
 

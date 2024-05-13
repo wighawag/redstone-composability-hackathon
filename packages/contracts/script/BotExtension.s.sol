@@ -43,6 +43,9 @@ contract BotExtensionDeploy is Script {
         world.registerFunctionSelector(systemResource, "joinMatch(bytes32,uint256,bytes32)");
         world.registerFunctionSelector(systemResource, "init(bytes32, bytes32)");
         world.registerFunctionSelector(systemResource, "process(bytes32)");
+        world.registerFunctionSelector(systemResource, "vote(bytes32,uint8)");
+        world.registerFunctionSelector(systemResource, "forceVoteNow(bytes32,uint8)");
+
 
         vm.stopBroadcast();
     }
