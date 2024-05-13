@@ -34,7 +34,6 @@ import worlds from "contracts/worlds.json";
  * See https://mud.dev/tutorials/minimal/deploy#run-the-user-interface
  * for instructions on how to add networks.
  */
-
 import { supportedChains } from "./supportedChains";
 
 export async function getNetworkConfig() {
