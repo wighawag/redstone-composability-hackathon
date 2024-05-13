@@ -1,105 +1,43 @@
+import { ConnectKitButton } from 'connectkit';
 import { useMUD } from "./MUDContext";
+import { useState } from 'react';
 
-const styleUnset = { all: "unset" } as const;
-
-export const App = () => {
+function App() {
   const {
-    network: { tables, useStore },
-    systemCalls: { addTask, toggleTask, deleteTask },
+    systemCalls: { joinMatch },
   } = useMUD();
 
-  const tasks = useStore((state) => {
-    const records = Object.values(state.getRecords(tables.Tasks));
-    records.sort((a, b) => Number(a.value.createdAt - b.value.createdAt));
-    return records;
-  });
+  const [matchID, setMatchID] = useState<string>('');
+
+  const execute = async () => {
+    if (!matchID) {
+      alert('Please paste a match ID');
+      return;
+    }
+    await joinMatch(matchID as `0x${string}`);
+  }
 
   return (
     <>
-      <table>
-        <tbody>
-          {tasks.map((task) => (
-            <tr key={task.id}>
-              <td align="right">
-                <input
-                  type="checkbox"
-                  checked={task.value.completedAt > 0n}
-                  title={task.value.completedAt === 0n ? "Mark task as completed" : "Mark task as incomplete"}
-                  onChange={async (event) => {
-                    event.preventDefault();
-                    const checkbox = event.currentTarget;
-
-                    checkbox.disabled = true;
-                    try {
-                      await toggleTask(task.key.id);
-                    } finally {
-                      checkbox.disabled = false;
-                    }
-                  }}
-                />
-              </td>
-              <td>{task.value.completedAt > 0n ? <s>{task.value.description}</s> : <>{task.value.description}</>}</td>
-              <td align="right">
-                <button
-                  type="button"
-                  title="Delete task"
-                  style={styleUnset}
-                  onClick={async (event) => {
-                    event.preventDefault();
-                    if (!window.confirm("Are you sure you want to delete this task?")) return;
-
-                    const button = event.currentTarget;
-                    button.disabled = true;
-                    try {
-                      await deleteTask(task.key.id);
-                    } finally {
-                      button.disabled = false;
-                    }
-                  }}
-                >
-                  &times;
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr>
-            <td>
-              <input type="checkbox" disabled />
-            </td>
-            <td colSpan={2}>
-              <form
-                onSubmit={async (event) => {
-                  event.preventDefault();
-                  const form = event.currentTarget;
-                  const fieldset = form.querySelector("fieldset");
-                  if (!(fieldset instanceof HTMLFieldSetElement)) return;
-
-                  const formData = new FormData(form);
-                  const desc = formData.get("description");
-                  if (typeof desc !== "string") return;
-
-                  fieldset.disabled = true;
-                  try {
-                    await addTask(desc);
-                    form.reset();
-                  } finally {
-                    fieldset.disabled = false;
-                  }
-                }}
-              >
-                <fieldset style={styleUnset}>
-                  <input type="text" name="description" />{" "}
-                  <button type="submit" title="Add task">
-                    Add
-                  </button>
-                </fieldset>
-              </form>
-            </td>
-          </tr>
-        </tfoot>
-      </table>
+      <div className="container">
+        <h1>🃏 The Joker Wants To Play</h1>
+        <div className='step'>
+            <ConnectKitButton />
+        </div>
+        <div className='step'>
+            <p>Paste a match ID to invite the bot</p>
+            <div className="input-group">
+                <input type="text" onChange={(e) => setMatchID(e.target.value)} value={matchID} placeholder="Paste Match ID" />
+                <button onClick={execute}>Execute</button>
+            </div>
+        </div>
+      </div>
+      <div className="links">
+          <a href="https://play.skystrife.xyz/">Tutorial</a>
+          <a href="https://play.skystrife.xyz/">Twitter</a>
+      </div>
     </>
   );
-};
+}
+
+export default App;
