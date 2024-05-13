@@ -15,11 +15,13 @@ import {
     MatchConfigData,
     LevelTemplates,
     HeroInRotation,
-    SpawnReservedBy
+    SpawnReservedBy,
+    MatchSpawnPoints
 } from "../skystrife/codegen/index.sol";
 import {IWorld} from "../skystrife/codegen/world/IWorld.sol";
 import {playerFromAddress, matchHasStarted, isOwnedByAddress, isOwnedBy} from "../skystrife/libraries/LibUtils.sol";
 import {LibGold} from "../skystrife/libraries/LibGold.sol";
+import {findMapCenter} from "../skystrife/libraries/LibMatch.sol";
 import {createMatchEntity} from "../skystrife/createMatchEntity.sol";
 
 contract BotActionSystem is System {
@@ -31,10 +33,36 @@ contract BotActionSystem is System {
         // for noew take the orb from msg.sender
         // MatchConfigData memory matchConfig = MatchConfig.get(matchEntity);
         // bytes32 isReserved = SpawnReservedBy.get(matchEntity, 0);
+
+        uint256 numSpawnPointsPrior = MatchSpawnPoints.length(matchEntity);
         IWorld world = IWorld(_world());
         world.register(matchEntity, spawnIndex, heroChoice);
         world.setName("Joker");
         world.toggleReady(matchEntity);
+
+        // We get the spawn point from the last index
+        bytes32 spawnPoint = MatchSpawnPoints.getItem(matchEntity, numSpawnPointsPrior);
+        PositionData memory spawnPosition = Position.get(matchEntity, spawnPoint);
+        PositionData memory mapCenter = findMapCenter(matchEntity);
+
+        // we compute the location of the heror based on LibMatch.spawnStarter 
+        int32 xDiff = spawnPosition.x - mapCenter.x;
+        int32 yDiff = spawnPosition.y - mapCenter.y;
+        if (spawnPosition.x > 0) {
+          spawnPosition.x = spawnPosition.x - 1;
+        } else if (xDiff < 0) {
+          spawnPosition.x = spawnPosition.x + 1;
+        } else if (yDiff > 0) {
+          spawnPosition.y = spawnPosition.y - 1;
+        } else {
+          spawnPosition.y = spawnPosition.y + 1;
+        }
+        bytes32[] memory entities = EntitiesAtPosition.get(matchEntity, spawnPosition.x, spawnPosition.y);
+        for (uint256 i = 0; i < entities.length; i++) {
+          // we then push units created there (should be the hero)
+          BotMatch.pushUnits(matchEntity, entities[i]);
+        }
+        
 
         // TODO setup first factory ?
     }
@@ -75,14 +103,15 @@ contract BotActionSystem is System {
         (bool foundTarget, bytes32 targetPlayer) = _getCurrentTarget(matchEntity);
 
         _processFactories(world, matchEntity, matchInfo.factories);
-        if (foundTarget) {
-            _processUnits(world, matchEntity, matchInfo.units, targetPlayer);
-        }
+        _processUnits(world, matchEntity, matchInfo.units, foundTarget, targetPlayer);
     }
 
     function _getCurrentTarget(bytes32 matchEntity) internal view returns (bool found, bytes32 playerTarget) {
         bytes32 botPlayer = playerFromAddress(matchEntity, address(this));
         bytes32[] memory playersInMatch = MatchPlayers.get(matchEntity); // asume 4 players
+        if (playersInMatch.length != 4) {
+          return (false, playerTarget);
+        }
         bytes32 player1;
         bytes32 player2;
         bytes32 player3;
@@ -124,7 +153,7 @@ contract BotActionSystem is System {
         voteData = Vote.get(matchEntity, uint8(round));
     }
 
-    function _processUnits(IWorld world, bytes32 matchEntity, bytes32[] memory unitEntities, bytes32 targetPlayer)
+    function _processUnits(IWorld world, bytes32 matchEntity, bytes32[] memory unitEntities, bool hasTarget, bytes32 targetPlayer)
         internal
     {
         // define order ?
@@ -134,19 +163,24 @@ contract BotActionSystem is System {
                 // TODO delete
                 // Note that this check is probably sufficient as when a unit is killed it losed its owner: https://github.com/latticexyz/skystrife-public/blob/d89c6ed1423a406f3f897c0fb5db2b2d41e2f027/packages/contracts/src/libraries/LibCombat.sol#L115
             } else {
-                _processUnit(world, matchEntity, unitEntities[i], targetPlayer);
+                _processUnit(world, matchEntity, unitEntities[i], hasTarget, targetPlayer);
             }
         }
     }
 
-    function _processUnit(IWorld world, bytes32 matchEntity, bytes32 unitEntity, bytes32 targetPlayer) internal {
+    function _processUnit(IWorld world, bytes32 matchEntity, bytes32 unitEntity, bool hasTarget, bytes32 targetPlayer) internal {
         PositionData memory from = Position.get(matchEntity, unitEntity);
         // TODO find enemy unit or building
         // best would be to provide path data from client and check it, but how to check if best move
         // else player running the process can put units in the wrong path
         // for now move randomly
 
-        (bool found, bytes32 targetEntity,) = _findNeighborTarget(matchEntity, from, targetPlayer);
+        bool found;
+        bytes32 targetEntity;
+        if (hasTarget) {
+          (found, targetEntity,) = _findNeighborTarget(matchEntity, from, targetPlayer);  
+        }
+        
         if (found) {
             world.fight(matchEntity, unitEntity, targetEntity);
         } else {
