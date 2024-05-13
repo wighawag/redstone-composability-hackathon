@@ -12,9 +12,13 @@ interface IBotActionSystem {
   error BotNotInMatch();
   error MatchAlreadyFinished();
 
-  function voteforbot__joinMatch(bytes32 matchEntity, uint256 spawnIndex, bytes32 heroChoice) external;
+  function voteforbot__joinMatch(bytes32 matchEntity, uint256 spawnIndexToStartFrom, bytes32 heroChoice) external;
 
   function voteforbot__init(bytes32 matchEntity, bytes32 factoryEntity) external;
 
   function voteforbot__process(bytes32 matchEntity) external;
+
+  function voteforbot__vote(bytes32 matchEntity, uint8 voteIndex) external;
+
+  function voteforbot__forceVoteNow(bytes32 matchEntity, uint8 voteIndex) external;
 }

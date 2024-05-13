@@ -48,11 +48,11 @@ contract BotActionSystem is System {
         uint256 numSpawnPointsPrior = MatchSpawnPoints.length(matchEntity);
         IWorld world = IWorld(_world());
         world.register(matchEntity, spawnIndex, heroChoice);
-        string memory name = "Joker2";
-        bytes32 nameBytes = bytes32(keccak256(bytes(name)));
-        if (NameExists.get(nameBytes) == false) {
+        string memory name = "Joker";
+        // bytes32 nameBytes = bytes32(keccak256(bytes(name)));
+        // if (NameExists.get(nameBytes) == false) {
           world.setName(name);
-        }
+        // }
         
         world.toggleReady(matchEntity);
 
@@ -64,10 +64,10 @@ contract BotActionSystem is System {
         bytes32 spawnPoint = MatchSpawnPoints.getItem(matchEntity, numSpawnPointsPrior);
         PositionData memory spawnPosition = Position.get(matchEntity, spawnPoint);
         
-        bytes32[] memory moreEntities = EntitiesAtPosition.get(matchEntity, spawnPosition.x, spawnPosition.y);
-        for (uint256 i = 0; i < moreEntities.length; i++) {
-          // we then push units created there (should be the hero)
-          BotMatch.pushFactories(matchEntity, moreEntities[i]);
+        bytes32[] memory spawnPointEntities = EntitiesAtPosition.get(matchEntity, spawnPosition.x, spawnPosition.y);
+        for (uint256 i = 0; i < spawnPointEntities.length; i++) {
+          // we then push factories created there
+          BotMatch.pushFactories(matchEntity, spawnPointEntities[i]);
         }
 
         PositionData memory mapCenter = findMapCenter(matchEntity);
@@ -140,7 +140,6 @@ contract BotActionSystem is System {
         _processFactories(world, matchEntity, matchInfo.factories);
         _processUnits(world, matchEntity, matchInfo.units, foundTarget, targetPlayer);
     }
-
 
 
      function vote(bytes32 matchEntity, uint8 voteIndex) external {
@@ -336,7 +335,7 @@ contract BotActionSystem is System {
         returns (bool found, bytes32 templateId)
     {
         bytes32 player = playerFromAddress(matchEntity, address(this));
-        int32 gold = LibGold.getCurrent(matchEntity, player);
+        int32 gold = 1500; //LibGold.getCurrent(matchEntity, player);
         bytes32[] memory templateIds = Factory.getPrototypeIds(matchEntity, factoryEntity);
         for (uint256 i = 0; i < templateIds.length; i++) {
             int32 goldCost = Factory.getItemGoldCosts(matchEntity, factoryEntity, i);
