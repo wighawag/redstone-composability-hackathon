@@ -26,8 +26,8 @@ contract BotExtensionDeploy is Script {
         address worldAddress = vm.envAddress("WORLD_ADDRESS");
 
         WorldRegistrationSystem world = WorldRegistrationSystem(worldAddress);
-        ResourceId namespaceResource = WorldResourceIdLib.encodeNamespace(bytes14("botaction3"));
-        ResourceId systemResource = WorldResourceIdLib.encode(RESOURCE_SYSTEM, "botaction3", "BotActionSystem");
+        ResourceId namespaceResource = WorldResourceIdLib.encodeNamespace(bytes14("voteforbot"));
+        ResourceId systemResource = WorldResourceIdLib.encode(RESOURCE_SYSTEM, "voteforbot", "BotActionSystem");
 
         vm.startBroadcast(deployerPrivateKey);
         world.registerNamespace(namespaceResource);

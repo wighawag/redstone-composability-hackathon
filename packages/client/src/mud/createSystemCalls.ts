@@ -5,8 +5,13 @@
 
 import { Hex } from "viem";
 import { SetupNetworkResult } from "./setupNetwork";
+import { encodeSystemCallFrom } from "@latticexyz/world/internal";
+import IWorldAbi from "contracts/out/IWorld.sol/IWorld.abi.json";
+import { resourceToHex } from "@latticexyz/common";
 
 export type SystemCalls = ReturnType<typeof createSystemCalls>;
+
+const BOT_SYSTEM_ID = resourceToHex({ type: "system", namespace: "", name: "BotActionSystem" });
 
 export function createSystemCalls(
   /*
@@ -28,27 +33,16 @@ export function createSystemCalls(
    *   syncToRecs
    *   (https://github.com/latticexyz/mud/blob/main/templates/react/packages/client/src/mud/setupNetwork.ts#L77-L83).
    */
-  { tables, useStore, worldContract, waitForTransaction }: SetupNetworkResult,
+  { worldContract, waitForTransaction }: SetupNetworkResult,
 ) {
-  const addTask = async (label: string) => {
-    const tx = await worldContract.write.addTask([label]);
+  const joinMatch = async (matchID: Hex) => {
+    const freeHero = '0x48616c6265726469657200000000000000000000000000000000000000000000';
+    const availableSpawn = 307n
+    const tx = await worldContract.write.voteforbot__joinMatch([matchID, availableSpawn, freeHero]);
     await waitForTransaction(tx);
-  };
-
-  const toggleTask = async (id: Hex) => {
-    const isComplete = (useStore.getState().getValue(tables.Tasks, { id })?.completedAt ?? 0n) > 0n;
-    const tx = isComplete ? await worldContract.write.resetTask([id]) : await worldContract.write.completeTask([id]);
-    await waitForTransaction(tx);
-  };
-
-  const deleteTask = async (id: Hex) => {
-    const tx = await worldContract.write.deleteTask([id]);
-    await waitForTransaction(tx);
-  };
+  }
 
   return {
-    addTask,
-    toggleTask,
-    deleteTask,
+    joinMatch,
   };
 }
