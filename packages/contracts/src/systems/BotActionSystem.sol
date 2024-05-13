@@ -193,6 +193,32 @@ contract BotActionSystem is System {
         
     }
 
+    function getCurrentVote(bytes32 matchEntity, uint8 playerIndex) external view returns (uint8 voteCount) {
+        VoteData memory voteData = _getCurrentVote(matchEntity);
+        if (playerIndex == 1) {
+            voteCount = voteData.player1Votes;
+        }
+        if (playerIndex == 2) {
+            voteCount = voteData.player2Votes;
+        }
+        if (playerIndex == 3) {
+            voteCount = voteData.player3Votes;
+        }
+    }
+
+    function getNextVote(bytes32 matchEntity, uint8 playerIndex) external view returns (uint8 voteCount) {
+        VoteData memory voteData = _getNextVote(matchEntity);
+        if (playerIndex == 1) {
+            voteCount = voteData.player1Votes;
+        }
+        if (playerIndex == 2) {
+            voteCount = voteData.player2Votes;
+        }
+        if (playerIndex == 3) {
+            voteCount = voteData.player3Votes;
+        }
+    }
+
     function _getCurrentTarget(bytes32 matchEntity) internal view returns (bool found, bytes32 playerTarget) {
         bytes32 botPlayer = playerFromAddress(matchEntity, address(this));
         bytes32[] memory playersInMatch = MatchPlayers.get(matchEntity); // asume 4 players
@@ -237,6 +263,11 @@ contract BotActionSystem is System {
 
     function _getCurrentVote(bytes32 matchEntity) internal view returns (VoteData memory voteData) {
         uint256 round = (block.timestamp / NUM_SECONDS) % 2;
+        voteData = Vote.get(matchEntity, uint8(round));
+    }
+
+     function _getNextVote(bytes32 matchEntity) internal view returns (VoteData memory voteData) {
+        uint256 round = ((block.timestamp / NUM_SECONDS) + 1) % 2;
         voteData = Vote.get(matchEntity, uint8(round));
     }
 

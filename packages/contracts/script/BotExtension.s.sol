@@ -68,6 +68,8 @@ contract BotExtensionDeploy is Script {
         world.registerFunctionSelector(systemResource, "getFactoryPosition(bytes32,bytes32)");
         world.registerFunctionSelector(systemResource, "build(bytes32,bytes32,bytes32,int32,int32)");
         world.registerFunctionSelector(systemResource, "getGold(bytes32)");
+        world.registerFunctionSelector(systemResource, "getCurrentVote(bytes32,uint8)");
+        world.registerFunctionSelector(systemResource, "getNextVote(bytes32,uint8)");
         
 
 

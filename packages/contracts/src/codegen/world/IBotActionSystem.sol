@@ -22,6 +22,10 @@ interface IBotActionSystem {
 
   function voteforbot__forceVoteNow(bytes32 matchEntity, uint8 voteIndex) external;
 
+  function voteforbot__getCurrentVote(bytes32 matchEntity, uint8 playerIndex) external view returns (uint8 voteCount);
+
+  function voteforbot__getNextVote(bytes32 matchEntity, uint8 playerIndex) external view returns (uint8 voteCount);
+
   function voteforbot__getFactories(bytes32 matchEntity) external view returns (bytes32[] memory);
 
   function voteforbot__numFactories(bytes32 matchEntity) external view returns (uint256);
