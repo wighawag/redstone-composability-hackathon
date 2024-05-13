@@ -31,7 +31,7 @@ WORLD_ADDRESS=0xf18058eaf60e826f0afdf2859a80716b587d5359
 source .env
 ```
 
-4. At this repository ([redstone-composability-hackathon](https://github.com/wighawag/redstone-composability-hackathon/)) and deploy the bot extension script:
+4. Deploy the bot extension script:
 
 ```
 forge script BotExtensionDeploy --rpc-url http://localhost:8545 --broadcast
