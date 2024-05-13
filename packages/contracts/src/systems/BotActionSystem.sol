@@ -398,6 +398,11 @@ contract BotActionSystem is System {
         return matchInfo.factories;
     }
 
+    function numFactories(bytes32 matchEntity) external view returns (uint256){
+        BotMatchData memory matchInfo = BotMatch.get(matchEntity);
+        return matchInfo.factories.length;
+    }
+
      function getGold(bytes32 matchEntity) external view returns (int32 gold){
         bytes32 player = playerFromAddress(matchEntity, address(this));
         gold = Gold.get(matchEntity, player); // LibGold.getCurrent(matchEntity, player);
