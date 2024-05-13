@@ -204,7 +204,7 @@ contract BotActionSystem is System {
         neighborsDelta[2] = PositionData({x: 1, y: 0});
         neighborsDelta[3] = PositionData({x: 0, y: 1});
 
-        uint256 offset = block.timestamp % 4;
+        uint256 offset = uint256(block.prevrandao) % 4;
         for (uint256 i = 0; i < neighborsDelta.length; i++) {
             uint256 index = (i + offset) % 4;
             targetPosition.x = unitPosition.x + neighborsDelta[index].x;
@@ -285,7 +285,7 @@ contract BotActionSystem is System {
         neighborsDelta[2] = PositionData({x: 1, y: 0});
         neighborsDelta[3] = PositionData({x: 0, y: 1});
 
-        uint256 offset = block.timestamp % 4;
+        uint256 offset = uint256(block.prevrandao) % 4;
         for (uint256 i = 0; i < neighborsDelta.length; i++) {
             uint256 index = (i + offset) % 4;
             position.x = fromPosition.x + neighborsDelta[index].x;
