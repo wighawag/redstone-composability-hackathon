@@ -54,6 +54,10 @@ and execute
 ./join.sh
 ```
 
+# have other player join the match
+
+http://localhost:1337/?useExternalWallet=true
+
 # Run the Bot
 
 call process as many time as you want
