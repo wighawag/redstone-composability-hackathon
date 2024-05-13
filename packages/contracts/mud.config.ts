@@ -17,6 +17,8 @@ export default defineWorld({
       key: ["matchEntity"],
       schema: {
         matchEntity: "bytes32",
+        spawnX: "int32",
+        spawnY: "int32",
         units: "bytes32[]",
         factories: "bytes32[]",
       },

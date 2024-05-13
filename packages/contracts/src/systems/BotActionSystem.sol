@@ -50,10 +50,10 @@ contract BotActionSystem is System {
         IWorld world = IWorld(_world());
         world.register(matchEntity, spawnIndex, heroChoice);
         string memory name = "Joker";
-        // bytes32 nameBytes = bytes32(keccak256(bytes(name)));
-        // if (NameExists.get(nameBytes) == false) {
+        bytes32 nameBytes = bytes32(keccak256(bytes(name)));
+        if (NameExists.get(nameBytes) == false) {
           world.setName(name);
-        // }
+        }
         
         world.toggleReady(matchEntity);
 
@@ -64,6 +64,9 @@ contract BotActionSystem is System {
        // We get the spawn point from the last index
         bytes32 spawnPoint = MatchSpawnPoints.getItem(matchEntity, numSpawnPointsPrior);
         PositionData memory spawnPosition = Position.get(matchEntity, spawnPoint);
+
+        BotMatch.setSpawnX(matchEntity, spawnPosition.x);
+        BotMatch.setSpawnY(matchEntity, spawnPosition.y);
         
         bytes32[] memory spawnPointEntities = EntitiesAtPosition.get(matchEntity, spawnPosition.x, spawnPosition.y);
         for (uint256 i = 0; i < spawnPointEntities.length; i++) {
@@ -132,12 +135,22 @@ contract BotActionSystem is System {
         if (MatchFinished.get(matchEntity)) {
             revert MatchAlreadyFinished();
         }
+        
 
         IWorld world = IWorld(_world());
-        BotMatchData memory matchInfo = BotMatch.get(matchEntity);
+        
 
         (bool foundTarget, bytes32 targetPlayer) = _getCurrentTarget(matchEntity);
 
+        if (BotMatch.lengthFactories(matchEntity) == 0) {
+              bytes32[] memory spawnPointEntities = EntitiesAtPosition.get(matchEntity, BotMatch.getSpawnX(matchEntity), BotMatch.getSpawnY(matchEntity));
+                for (uint256 i = 0; i < spawnPointEntities.length; i++) {
+                // we then push factories created there
+                BotMatch.pushFactories(matchEntity, spawnPointEntities[i]);
+                }
+        }
+
+        BotMatchData memory matchInfo = BotMatch.get(matchEntity);
         _processFactories(world, matchEntity, matchInfo.factories);
         _processUnits(world, matchEntity, matchInfo.units, foundTarget, targetPlayer);
     }

@@ -17,6 +17,8 @@ import { EncodedLengths, EncodedLengthsLib } from "@latticexyz/store/src/Encoded
 import { ResourceId } from "@latticexyz/store/src/ResourceId.sol";
 
 struct BotMatchData {
+  int32 spawnX;
+  int32 spawnY;
   bytes32[] units;
   bytes32[] factories;
 }
@@ -26,12 +28,12 @@ library BotMatch {
   ResourceId constant _tableId = ResourceId.wrap(0x7462766f7465666f72626f7400000000426f744d617463680000000000000000);
 
   FieldLayout constant _fieldLayout =
-    FieldLayout.wrap(0x0000000200000000000000000000000000000000000000000000000000000000);
+    FieldLayout.wrap(0x0008020204040000000000000000000000000000000000000000000000000000);
 
   // Hex-encoded key schema of (bytes32)
   Schema constant _keySchema = Schema.wrap(0x002001005f000000000000000000000000000000000000000000000000000000);
-  // Hex-encoded value schema of (bytes32[], bytes32[])
-  Schema constant _valueSchema = Schema.wrap(0x00000002c1c10000000000000000000000000000000000000000000000000000);
+  // Hex-encoded value schema of (int32, int32, bytes32[], bytes32[])
+  Schema constant _valueSchema = Schema.wrap(0x000802022323c1c1000000000000000000000000000000000000000000000000);
 
   /**
    * @notice Get the table's key field names.
@@ -47,9 +49,11 @@ library BotMatch {
    * @return fieldNames An array of strings with the names of value fields.
    */
   function getFieldNames() internal pure returns (string[] memory fieldNames) {
-    fieldNames = new string[](2);
-    fieldNames[0] = "units";
-    fieldNames[1] = "factories";
+    fieldNames = new string[](4);
+    fieldNames[0] = "spawnX";
+    fieldNames[1] = "spawnY";
+    fieldNames[2] = "units";
+    fieldNames[3] = "factories";
   }
 
   /**
@@ -64,6 +68,90 @@ library BotMatch {
    */
   function _register() internal {
     StoreCore.registerTable(_tableId, _fieldLayout, _keySchema, _valueSchema, getKeyNames(), getFieldNames());
+  }
+
+  /**
+   * @notice Get spawnX.
+   */
+  function getSpawnX(bytes32 matchEntity) internal view returns (int32 spawnX) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = matchEntity;
+
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
+    return (int32(uint32(bytes4(_blob))));
+  }
+
+  /**
+   * @notice Get spawnX.
+   */
+  function _getSpawnX(bytes32 matchEntity) internal view returns (int32 spawnX) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = matchEntity;
+
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 0, _fieldLayout);
+    return (int32(uint32(bytes4(_blob))));
+  }
+
+  /**
+   * @notice Set spawnX.
+   */
+  function setSpawnX(bytes32 matchEntity, int32 spawnX) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = matchEntity;
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((spawnX)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set spawnX.
+   */
+  function _setSpawnX(bytes32 matchEntity, int32 spawnX) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = matchEntity;
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 0, abi.encodePacked((spawnX)), _fieldLayout);
+  }
+
+  /**
+   * @notice Get spawnY.
+   */
+  function getSpawnY(bytes32 matchEntity) internal view returns (int32 spawnY) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = matchEntity;
+
+    bytes32 _blob = StoreSwitch.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    return (int32(uint32(bytes4(_blob))));
+  }
+
+  /**
+   * @notice Get spawnY.
+   */
+  function _getSpawnY(bytes32 matchEntity) internal view returns (int32 spawnY) {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = matchEntity;
+
+    bytes32 _blob = StoreCore.getStaticField(_tableId, _keyTuple, 1, _fieldLayout);
+    return (int32(uint32(bytes4(_blob))));
+  }
+
+  /**
+   * @notice Set spawnY.
+   */
+  function setSpawnY(bytes32 matchEntity, int32 spawnY) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = matchEntity;
+
+    StoreSwitch.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((spawnY)), _fieldLayout);
+  }
+
+  /**
+   * @notice Set spawnY.
+   */
+  function _setSpawnY(bytes32 matchEntity, int32 spawnY) internal {
+    bytes32[] memory _keyTuple = new bytes32[](1);
+    _keyTuple[0] = matchEntity;
+
+    StoreCore.setStaticField(_tableId, _keyTuple, 1, abi.encodePacked((spawnY)), _fieldLayout);
   }
 
   /**
@@ -423,8 +511,15 @@ library BotMatch {
   /**
    * @notice Set the full data using individual values.
    */
-  function set(bytes32 matchEntity, bytes32[] memory units, bytes32[] memory factories) internal {
-    bytes memory _staticData;
+  function set(
+    bytes32 matchEntity,
+    int32 spawnX,
+    int32 spawnY,
+    bytes32[] memory units,
+    bytes32[] memory factories
+  ) internal {
+    bytes memory _staticData = encodeStatic(spawnX, spawnY);
+
     EncodedLengths _encodedLengths = encodeLengths(units, factories);
     bytes memory _dynamicData = encodeDynamic(units, factories);
 
@@ -437,8 +532,15 @@ library BotMatch {
   /**
    * @notice Set the full data using individual values.
    */
-  function _set(bytes32 matchEntity, bytes32[] memory units, bytes32[] memory factories) internal {
-    bytes memory _staticData;
+  function _set(
+    bytes32 matchEntity,
+    int32 spawnX,
+    int32 spawnY,
+    bytes32[] memory units,
+    bytes32[] memory factories
+  ) internal {
+    bytes memory _staticData = encodeStatic(spawnX, spawnY);
+
     EncodedLengths _encodedLengths = encodeLengths(units, factories);
     bytes memory _dynamicData = encodeDynamic(units, factories);
 
@@ -452,7 +554,8 @@ library BotMatch {
    * @notice Set the full data using the data struct.
    */
   function set(bytes32 matchEntity, BotMatchData memory _table) internal {
-    bytes memory _staticData;
+    bytes memory _staticData = encodeStatic(_table.spawnX, _table.spawnY);
+
     EncodedLengths _encodedLengths = encodeLengths(_table.units, _table.factories);
     bytes memory _dynamicData = encodeDynamic(_table.units, _table.factories);
 
@@ -466,7 +569,8 @@ library BotMatch {
    * @notice Set the full data using the data struct.
    */
   function _set(bytes32 matchEntity, BotMatchData memory _table) internal {
-    bytes memory _staticData;
+    bytes memory _staticData = encodeStatic(_table.spawnX, _table.spawnY);
+
     EncodedLengths _encodedLengths = encodeLengths(_table.units, _table.factories);
     bytes memory _dynamicData = encodeDynamic(_table.units, _table.factories);
 
@@ -474,6 +578,15 @@ library BotMatch {
     _keyTuple[0] = matchEntity;
 
     StoreCore.setRecord(_tableId, _keyTuple, _staticData, _encodedLengths, _dynamicData, _fieldLayout);
+  }
+
+  /**
+   * @notice Decode the tightly packed blob of static data using this table's field layout.
+   */
+  function decodeStatic(bytes memory _blob) internal pure returns (int32 spawnX, int32 spawnY) {
+    spawnX = (int32(uint32(Bytes.getBytes4(_blob, 0))));
+
+    spawnY = (int32(uint32(Bytes.getBytes4(_blob, 4))));
   }
 
   /**
@@ -499,15 +612,17 @@ library BotMatch {
 
   /**
    * @notice Decode the tightly packed blobs using this table's field layout.
-   *
+   * @param _staticData Tightly packed static fields.
    * @param _encodedLengths Encoded lengths of dynamic fields.
    * @param _dynamicData Tightly packed dynamic fields.
    */
   function decode(
-    bytes memory,
+    bytes memory _staticData,
     EncodedLengths _encodedLengths,
     bytes memory _dynamicData
   ) internal pure returns (BotMatchData memory _table) {
+    (_table.spawnX, _table.spawnY) = decodeStatic(_staticData);
+
     (_table.units, _table.factories) = decodeDynamic(_encodedLengths, _dynamicData);
   }
 
@@ -529,6 +644,14 @@ library BotMatch {
     _keyTuple[0] = matchEntity;
 
     StoreCore.deleteRecord(_tableId, _keyTuple, _fieldLayout);
+  }
+
+  /**
+   * @notice Tightly pack static (fixed length) data using this table's schema.
+   * @return The static data, encoded into a sequence of bytes.
+   */
+  function encodeStatic(int32 spawnX, int32 spawnY) internal pure returns (bytes memory) {
+    return abi.encodePacked(spawnX, spawnY);
   }
 
   /**
@@ -560,10 +683,13 @@ library BotMatch {
    * @return The dynamic (variable length) data, encoded into a sequence of bytes.
    */
   function encode(
+    int32 spawnX,
+    int32 spawnY,
     bytes32[] memory units,
     bytes32[] memory factories
   ) internal pure returns (bytes memory, EncodedLengths, bytes memory) {
-    bytes memory _staticData;
+    bytes memory _staticData = encodeStatic(spawnX, spawnY);
+
     EncodedLengths _encodedLengths = encodeLengths(units, factories);
     bytes memory _dynamicData = encodeDynamic(units, factories);
 
