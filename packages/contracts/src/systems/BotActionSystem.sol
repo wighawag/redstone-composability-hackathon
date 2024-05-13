@@ -17,7 +17,8 @@ import {
     HeroInRotation,
     SpawnReservedBy,
     MatchSpawnPoints,
-    NameExists
+    NameExists,
+    Gold
 } from "../skystrife/codegen/index.sol";
 import {IWorld} from "../skystrife/codegen/world/IWorld.sol";
 import { SpawnSettlementTemplateId } from "../skystrife/codegen/Templates.sol";
@@ -140,6 +141,7 @@ contract BotActionSystem is System {
         _processFactories(world, matchEntity, matchInfo.factories);
         _processUnits(world, matchEntity, matchInfo.units, foundTarget, targetPlayer);
     }
+
 
 
      function vote(bytes32 matchEntity, uint8 voteIndex) external {
@@ -331,18 +333,16 @@ contract BotActionSystem is System {
     }
 
     function _findTemplateToBuild(bytes32 matchEntity, bytes32 factoryEntity)
-        internal
+        internal view
         returns (bool found, bytes32 templateId)
     {
         bytes32 player = playerFromAddress(matchEntity, address(this));
-        int32 gold = 1500; //LibGold.getCurrent(matchEntity, player);
+        int32 gold = Gold.get(matchEntity, player); // TODO  LibGold.getCurrent(matchEntity, player);
         bytes32[] memory templateIds = Factory.getPrototypeIds(matchEntity, factoryEntity);
         for (uint256 i = 0; i < templateIds.length; i++) {
             int32 goldCost = Factory.getItemGoldCosts(matchEntity, factoryEntity, i);
             if (goldCost <= gold) {
-                found = true;
-                templateId = templateIds[i];
-                return (found, templateId);
+                return (true,  templateIds[i]);
             }
         }
     }
@@ -388,4 +388,36 @@ contract BotActionSystem is System {
             }
         }
     }
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // DEBUGING
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    function getFactories(bytes32 matchEntity) external view returns (bytes32[] memory){
+        BotMatchData memory matchInfo = BotMatch.get(matchEntity);
+        return matchInfo.factories;
+    }
+
+     function getGold(bytes32 matchEntity) external view returns (int32 gold){
+        bytes32 player = playerFromAddress(matchEntity, address(this));
+        gold = Gold.get(matchEntity, player); // LibGold.getCurrent(matchEntity, player);
+    }
+
+    function getTemplateIds(bytes32 matchEntity, bytes32 factoryEntity) external view returns (bytes32[] memory){
+        return Factory.getPrototypeIds(matchEntity, factoryEntity);
+    }
+
+    function getFactoryPosition(bytes32 matchEntity, bytes32 factoryEntity) external view returns (int32 x, int32 y){
+         PositionData memory pos = Position.get(matchEntity, factoryEntity);
+         x = pos.x;
+         y = pos.y;
+    }
+
+    function build(bytes32 matchEntity, bytes32 factoryEntity, bytes32 templateId, int32 x, int32 y) external {
+        IWorld world = IWorld(_world());
+        bytes32 newUnit = world.build(matchEntity, factoryEntity, templateId, PositionData({x: x, y: y}));
+        BotMatch.pushUnits(matchEntity, newUnit);
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
 }

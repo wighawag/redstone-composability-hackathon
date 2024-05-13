@@ -21,4 +21,20 @@ interface IBotActionSystem {
   function voteforbot__vote(bytes32 matchEntity, uint8 voteIndex) external;
 
   function voteforbot__forceVoteNow(bytes32 matchEntity, uint8 voteIndex) external;
+
+  function voteforbot__getFactories(bytes32 matchEntity) external view returns (bytes32[] memory);
+
+  function voteforbot__getGold(bytes32 matchEntity) external returns (int32 gold);
+
+  function voteforbot__getTemplateIds(
+    bytes32 matchEntity,
+    bytes32 factoryEntity
+  ) external view returns (bytes32[] memory);
+
+  function voteforbot__getFactoryPosition(
+    bytes32 matchEntity,
+    bytes32 factoryEntity
+  ) external view returns (int32 x, int32 y);
+
+  function voteforbot__build(bytes32 matchEntity, bytes32 factoryEntity, bytes32 templateId, int32 x, int32 y) external;
 }
