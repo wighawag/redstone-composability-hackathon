@@ -9,7 +9,7 @@ pnpm dev
 
 this will give you a world address
 
-then in the current repo, navgate to contracts folder
+then move back into this repo ([redstone-composability-hackathon](https://github.com/wighawag/redstone-composability-hackathon/))_, navgate to contracts folder
 
 
 ensure you have a .env file with `WORLD_ADDRESS=0xf18058eaf60e826f0afdf2859a80716b587d5359`
