@@ -415,6 +415,9 @@ contract BotActionSystem is System {
     }
 
     function _isClearPosition(bytes32 matchEntity, PositionData memory position) internal view returns (bool clear) {
+        if (position.x == BotMatch.getSpawnX(matchEntity) && position.y == BotMatch.getSpawnY(matchEntity)) {
+            return false;
+        }
         bytes32[] memory entitiesAtPosition = EntitiesAtPosition.get(matchEntity, position.x, position.y);
         return _isClearOfUntraversableEntities(matchEntity, entitiesAtPosition);
     }
